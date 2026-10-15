@@ -1,5 +1,5 @@
 import { fetchRemoteText } from '../lib/fetcher.js';
-import { parseArticle } from '../lib/content-parser.js';
+import { parseArticle, slimHtmlForParsing } from '../lib/content-parser.js';
 import { htmlToMarkdown } from '../lib/markdown.js';
 import { errorResponse, htmlResponse, HttpError, jsonResponse, markdownResponse, parseBoolean, createJsonBody } from '../lib/http.js';
 import { enforceRateLimit, getClientIp } from '../utils/rate-limit.js';
@@ -67,7 +67,8 @@ export async function handleExtract(request, env, options = {}) {
 
 function respondRaw(html, finalUrl, format, keepImages) {
   if (format === 'markdown') {
-    return markdownResponse(htmlToMarkdown(html, { keepImages }));
+    // 轉 Markdown 前先瘦身，避免把整包 script / svg 雪碧圖當文字渲染出來
+    return markdownResponse(htmlToMarkdown(slimHtmlForParsing(html), { keepImages }));
   }
   if (format === 'html') {
     return htmlResponse(html);

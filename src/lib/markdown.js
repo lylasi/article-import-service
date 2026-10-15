@@ -94,6 +94,23 @@ function renderElement(node, ctx) {
       return renderHeading(node, ctx, Number(tag.slice(1)) || 1);
     case 'hr':
       return '\n\n---\n\n';
+    // 這些節點沒有可讀文字：整棵子樹跳過。
+    // 不跳過的話 <svg><symbol id="icon-bookmark"> 會被當成 "icon bookmark" 文字吐出來，
+    // <script type="application/ld+json"> 的 schema.org JSON 也會整包變成正文。
+    case 'script':
+    case 'style':
+    case 'noscript':
+    case 'template':
+    case 'svg':
+    case 'head':
+    case 'iframe':
+    case 'canvas':
+    case 'object':
+    case 'embed':
+    case 'map':
+    case 'audio':
+    case 'video':
+      return '';
     case 'figure':
       return block(renderChildren(node, ctx));
     case 'figcaption':
