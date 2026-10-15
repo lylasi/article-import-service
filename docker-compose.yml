@@ -1,0 +1,19 @@
+services:
+  article-import:
+    build: .
+    image: article-import-service:local
+    container_name: article-import-service
+    ports:
+      # 宿主 8787 已被其他服務佔用（2FA 看碼器），所以映射到 8788
+      - "8788:8787"
+    environment:
+      PORT: "8787"
+      # 不設定的話就用 src/lib/config.js 的預設值（內建 12 個來源、8MB 上限、300 秒 feed 快取）
+      ALLOW_HOSTS: "www.rt.com,rt-english.com,*.rt.com,feeds.bbci.co.uk,*.bbc.co.uk,*.bbc.com,edition.cnn.com,www.cnn.com,*.cnn.com,rss.cnn.com,www.timeforkids.com,www.snexplores.org,www.sciencedaily.com,theconversation.com,www.theguardian.com,www.npr.org,text.npr.org,www.abc.net.au,www.goodnewsnetwork.org"
+      MAX_BYTES: "8000000"
+      FEED_CACHE_TTL: "300"
+      # 留空＝用內建來源；要覆寫就填完整的 JSON（非空會完全取代內建清單）
+      SOURCES_JSON: "{}"
+      # 啟動時先抓一輪 feed，第一次打開前端就不用等
+      REFRESH_ON_BOOT: "true"
+    restart: unless-stopped

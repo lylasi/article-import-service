@@ -51,13 +51,15 @@ export async function handleFeedArticle(request, env, params = {}) {
   }
   try {
     const source = getSourceConfig(sourceId, env);
+    // 來源自己宣告的 allowHosts 是「額外限制」：只允許抓這個來源的文章主機。
     if (Array.isArray(source.allowHosts) && source.allowHosts.length) {
       const hostname = new URL(target).hostname;
       if (!isHostAllowed(hostname, source.allowHosts)) {
         throw new HttpError(403, `URL host ${hostname} is not permitted for ${sourceId}`);
       }
     }
-    return handleExtract(request, env);
+    // 同時把它們加成這次請求的放行清單，免得「加了來源卻忘了同步 ALLOW_HOSTS」而吃 403。
+    return handleExtract(request, env, { extraAllowedHosts: source.allowHosts || [] });
   } catch (error) {
     return errorResponse(error);
   }

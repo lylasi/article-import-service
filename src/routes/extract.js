@@ -3,8 +3,14 @@ import { parseArticle } from '../lib/content-parser.js';
 import { htmlToMarkdown } from '../lib/markdown.js';
 import { errorResponse, htmlResponse, HttpError, jsonResponse, markdownResponse, parseBoolean, createJsonBody } from '../lib/http.js';
 import { enforceRateLimit, getClientIp } from '../utils/rate-limit.js';
+import { logger } from '../utils/logger.js';
 
-export async function handleExtract(request, env) {
+/**
+ * @param {Request} request
+ * @param {object} env
+ * @param {{extraAllowedHosts?: string[]}} [options] 由 /feeds/:id/article 傳入該來源宣告的文章主機
+ */
+export async function handleExtract(request, env, options = {}) {
   const url = new URL(request.url);
   const target = url.searchParams.get('url');
   const format = (url.searchParams.get('format') || 'json').toLowerCase();
@@ -18,7 +24,9 @@ export async function handleExtract(request, env) {
 
   try {
     enforceRateLimit(getClientIp(request), { limit: 40, windowMs: 60_000 });
-    const { html, finalUrl } = await fetchRemoteText(target, env);
+    const { html, finalUrl } = await fetchRemoteText(target, env, {
+      extraAllowedHosts: options.extraAllowedHosts || []
+    });
 
     if (mode === 'raw') {
       return respondRaw(html, finalUrl, format, keepImages);
@@ -49,6 +57,10 @@ export async function handleExtract(request, env) {
       })
     );
   } catch (error) {
+    // errorResponse 只會回 500，真正的原因要在這裡留下來（wrangler tail 看得到）
+    if (!(error instanceof HttpError)) {
+      logger.error('extract failed', target, error?.stack || error);
+    }
     return errorResponse(error);
   }
 }

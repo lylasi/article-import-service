@@ -3,16 +3,22 @@ main = "src/index.js"
 compatibility_date = "2024-07-01"
 workers_dev = true
 
+# 這裡的值會覆蓋程式碼裡的預設（src/lib/config.js）。
+# 兩個坑：
+#   1. SOURCES_JSON 一旦非空就會「完全取代」內建來源清單，所以要嘛留 "{}"（用內建 12 個來源），
+#      要嘛把全部要用的來源都寫進這個 JSON。
+#   2. 新增來源時，該來源的「文章主機」要同步加進 ALLOW_HOSTS（feed 主機不用，抓 feed 時會自動臨時加白）。
 [vars]
-ALLOW_HOSTS = "www.rt.com,*.bbc.com,edition.cnn.com,www.nytimes.com"
-MAX_BYTES = "4000000"
+ALLOW_HOSTS = "www.rt.com,rt-english.com,*.rt.com,feeds.bbci.co.uk,*.bbc.co.uk,*.bbc.com,edition.cnn.com,www.cnn.com,*.cnn.com,rss.cnn.com,www.timeforkids.com,www.snexplores.org,www.sciencedaily.com,theconversation.com,www.theguardian.com,www.npr.org,text.npr.org,www.abc.net.au,www.goodnewsnetwork.org"
+MAX_BYTES = "8000000"
 SOURCES_JSON = "{}"
 FEED_CACHE_TTL = "300"
 
 [[kv_namespaces]]
 binding = "FEEDS_CACHE"
-id = "00000000000000000000000000000000"
-preview_id = "11111111111111111111111111111111"
+id = "2da90f96c5624b1aa980f505ea313800"
 
-[[triggers]]
-crons = ["*/5 * * * *"]
+# 定時刷新所有 feed。目前不需要：feed 是「按需抓取 + KV 快取 FEED_CACHE_TTL 秒」，
+# 線上也沒有開這個 cron。要用再打開（開著的話每 5 分鐘會抓一輪所有來源）。
+# [[triggers]]
+# crons = ["*/5 * * * *"]
